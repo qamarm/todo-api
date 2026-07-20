@@ -39,3 +39,10 @@ class TodoList(SQLModel):
 
 class JenkinsBuildResponse(SQLModel):
     build_url: str
+
+
+class JenkinsBuildStatus(SQLModel):
+    number: int
+    url: str
+    building: bool
+    result: Optional[str] = None

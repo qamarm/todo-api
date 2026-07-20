@@ -52,6 +52,7 @@ uv run pytest
 | PATCH  | `/todos/{id}`    | Update a todo      |
 | DELETE | `/todos/{id}`    | Delete a todo      |
 | POST   | `/jenkins/builds` | Trigger the `my-cli` Jenkins job |
+| GET    | `/jenkins/builds/{number}` | Get status/result of a build |
 
 ### Examples
 
@@ -77,6 +78,15 @@ now), waits (up to 30s) for Jenkins to assign a build number, and returns
 `.env.example`). Returns `502` if Jenkins can't be reached or rejects the
 request, `504` (with the queue item URL in the error) if Jenkins doesn't
 assign a build number within the timeout.
+
+```bash
+curl http://localhost:8000/jenkins/builds/3
+```
+
+`GET /jenkins/builds/{number}` returns
+`{"number": <int>, "url": <str>, "building": <bool>, "result": <str|null>}` for
+that build of `my-cli`. `result` is `null` while the build is still running.
+Returns `404` if the build doesn't exist.
 
 ## Notes
 

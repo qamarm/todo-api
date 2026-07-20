@@ -5,6 +5,8 @@ import time
 import httpx
 from fastapi import HTTPException, status
 
+from app.models import JenkinsBuildStatus
+
 JENKINS_URL = os.environ.get("JENKINS_URL", "http://localhost:8080").rstrip("/")
 JENKINS_USER = os.environ.get("JENKINS_USER")
 JENKINS_API_TOKEN = os.environ.get("JENKINS_API_TOKEN")
@@ -91,3 +93,29 @@ async def trigger_build_and_wait() -> str:
         headers = await _get_crumb_headers(client)
         queue_url = await _trigger_build(client, headers)
         return await _poll_queue_item(client, queue_url)
+
+
+async def get_build_status(number: int) -> JenkinsBuildStatus:
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            resp = await client.get(f"{JENKINS_URL}/{JENKINS_JOB_PATH}/{number}/api/json", auth=_auth())
+        except httpx.RequestError as exc:
+            raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"Could not reach Jenkins: {exc}") from exc
+
+        if resp.status_code == 404:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Build {number} not found")
+
+        try:
+            resp.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(
+                status.HTTP_502_BAD_GATEWAY, f"Jenkins returned {resp.status_code} fetching build {number}"
+            ) from exc
+
+        data = resp.json()
+        return JenkinsBuildStatus(
+            number=data["number"],
+            url=data["url"],
+            building=data["building"],
+            result=data.get("result"),
+        )

@@ -4,8 +4,16 @@ from fastapi import Depends, FastAPI, HTTPException, Query, status
 from sqlmodel import Session, func, select
 
 from app.db import get_session
-from app.jenkins import trigger_build_and_wait
-from app.models import JenkinsBuildResponse, Todo, TodoCreate, TodoList, TodoUpdate, utcnow
+from app.jenkins import get_build_status, trigger_build_and_wait
+from app.models import (
+    JenkinsBuildResponse,
+    JenkinsBuildStatus,
+    Todo,
+    TodoCreate,
+    TodoList,
+    TodoUpdate,
+    utcnow,
+)
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
@@ -14,7 +22,14 @@ def get_jenkins_trigger() -> Callable[[], Awaitable[str]]:
     return trigger_build_and_wait
 
 
+def get_jenkins_status_fetcher() -> Callable[[int], Awaitable[JenkinsBuildStatus]]:
+    return get_build_status
+
+
 JenkinsTriggerDep = Annotated[Callable[[], Awaitable[str]], Depends(get_jenkins_trigger)]
+JenkinsStatusDep = Annotated[
+    Callable[[int], Awaitable[JenkinsBuildStatus]], Depends(get_jenkins_status_fetcher)
+]
 
 app = FastAPI(title="Todo API")
 
@@ -79,3 +94,8 @@ def delete_todo(todo_id: int, session: SessionDep) -> None:
 async def trigger_jenkins_build(trigger: JenkinsTriggerDep) -> JenkinsBuildResponse:
     build_url = await trigger()
     return JenkinsBuildResponse(build_url=build_url)
+
+
+@app.get("/jenkins/builds/{number}", response_model=JenkinsBuildStatus)
+async def get_jenkins_build(number: int, fetch_status: JenkinsStatusDep) -> JenkinsBuildStatus:
+    return await fetch_status(number)

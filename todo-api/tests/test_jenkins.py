@@ -117,3 +117,43 @@ def test_missing_credentials_raises(monkeypatch):
         asyncio.run(jenkins.trigger_build_and_wait())
 
     assert exc_info.value.status_code == 500
+
+
+def test_get_build_status_returns_status():
+    with respx.mock:
+        respx.get(f"{jenkins.JENKINS_URL}/{jenkins.JENKINS_JOB_PATH}/7/api/json").mock(
+            return_value=httpx.Response(
+                200, json={"number": 7, "url": BUILD_URL, "building": False, "result": "SUCCESS"}
+            )
+        )
+
+        result = asyncio.run(jenkins.get_build_status(7))
+
+    assert result.number == 7
+    assert result.url == BUILD_URL
+    assert result.building is False
+    assert result.result == "SUCCESS"
+
+
+def test_get_build_status_while_building():
+    with respx.mock:
+        respx.get(f"{jenkins.JENKINS_URL}/{jenkins.JENKINS_JOB_PATH}/7/api/json").mock(
+            return_value=httpx.Response(200, json={"number": 7, "url": BUILD_URL, "building": True, "result": None})
+        )
+
+        result = asyncio.run(jenkins.get_build_status(7))
+
+    assert result.building is True
+    assert result.result is None
+
+
+def test_get_build_status_not_found():
+    with respx.mock:
+        respx.get(f"{jenkins.JENKINS_URL}/{jenkins.JENKINS_JOB_PATH}/999/api/json").mock(
+            return_value=httpx.Response(404)
+        )
+
+        with pytest.raises(Exception) as exc_info:
+            asyncio.run(jenkins.get_build_status(999))
+
+    assert exc_info.value.status_code == 404

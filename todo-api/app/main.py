@@ -1,22 +1,14 @@
-from contextlib import asynccontextmanager
-from typing import Annotated, AsyncIterator
+from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from sqlmodel import Session, select
 
-from app.db import create_db_and_tables, get_session
+from app.db import get_session
 from app.models import Todo, TodoCreate, TodoUpdate, utcnow
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    create_db_and_tables()
-    yield
-
-
-app = FastAPI(title="Todo API", lifespan=lifespan)
+app = FastAPI(title="Todo API")
 
 
 @app.get("/health")

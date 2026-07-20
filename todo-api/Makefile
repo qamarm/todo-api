@@ -17,8 +17,8 @@ migration: ## Create a new migration (usage: make migration MSG="add x")
 run: ## Run the dev server locally
 	uv run uvicorn app.main:app --reload
 
-test: ## Run the test suite
-	uv run pytest -v
+test: ## Run the test suite with coverage
+	uv run pytest -v --cov=app --cov-report=term-missing
 
 build: ## Build the Docker image
 	docker compose build
@@ -37,4 +37,4 @@ logs: ## Follow container logs
 
 clean: ## Remove caches and local data
 	find . -path ./.venv -prune -o -type d -name '__pycache__' -exec rm -rf {} +
-	rm -rf .pytest_cache data
+	rm -rf .pytest_cache .coverage data

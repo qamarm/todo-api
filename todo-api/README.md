@@ -38,7 +38,7 @@ uv run alembic revision --autogenerate -m "message"   # create a new migration a
 ## Run tests
 
 ```bash
-uv run pytest
+make test   # runs pytest with a coverage report (term-missing)
 ```
 
 ## API

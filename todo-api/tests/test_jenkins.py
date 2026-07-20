@@ -110,6 +110,102 @@ def test_poll_queue_item_times_out():
     assert exc_info.value.status_code == 504
 
 
+def test_get_crumb_headers_connection_error():
+    with respx.mock:
+        respx.get(f"{jenkins.JENKINS_URL}/crumbIssuer/api/json").mock(side_effect=httpx.ConnectError("boom"))
+
+        async def run():
+            async with httpx.AsyncClient() as client:
+                return await jenkins._get_crumb_headers(client)
+
+        with pytest.raises(Exception) as exc_info:
+            asyncio.run(run())
+
+    assert exc_info.value.status_code == 502
+
+
+def test_trigger_build_connection_error():
+    with respx.mock:
+        respx.post(f"{jenkins.JENKINS_URL}/{jenkins.JENKINS_JOB_PATH}/build").mock(
+            side_effect=httpx.ConnectError("boom")
+        )
+
+        async def run():
+            async with httpx.AsyncClient() as client:
+                return await jenkins._trigger_build(client, {})
+
+        with pytest.raises(Exception) as exc_info:
+            asyncio.run(run())
+
+    assert exc_info.value.status_code == 502
+
+
+def test_trigger_build_non_201_status():
+    with respx.mock:
+        respx.post(f"{jenkins.JENKINS_URL}/{jenkins.JENKINS_JOB_PATH}/build").mock(return_value=httpx.Response(403))
+
+        async def run():
+            async with httpx.AsyncClient() as client:
+                return await jenkins._trigger_build(client, {})
+
+        with pytest.raises(Exception) as exc_info:
+            asyncio.run(run())
+
+    assert exc_info.value.status_code == 502
+
+
+def test_trigger_build_missing_location_header():
+    with respx.mock:
+        respx.post(f"{jenkins.JENKINS_URL}/{jenkins.JENKINS_JOB_PATH}/build").mock(return_value=httpx.Response(201))
+
+        async def run():
+            async with httpx.AsyncClient() as client:
+                return await jenkins._trigger_build(client, {})
+
+        with pytest.raises(Exception) as exc_info:
+            asyncio.run(run())
+
+    assert exc_info.value.status_code == 502
+
+
+def test_poll_queue_item_connection_error():
+    with respx.mock:
+        respx.get(f"{QUEUE_URL}api/json").mock(side_effect=httpx.ConnectError("boom"))
+
+        async def run():
+            async with httpx.AsyncClient() as client:
+                return await jenkins._poll_queue_item(client, QUEUE_URL)
+
+        with pytest.raises(Exception) as exc_info:
+            asyncio.run(run())
+
+    assert exc_info.value.status_code == 502
+
+
+def test_get_build_status_connection_error():
+    with respx.mock:
+        respx.get(f"{jenkins.JENKINS_URL}/{jenkins.JENKINS_JOB_PATH}/7/api/json").mock(
+            side_effect=httpx.ConnectError("boom")
+        )
+
+        with pytest.raises(Exception) as exc_info:
+            asyncio.run(jenkins.get_build_status(7))
+
+    assert exc_info.value.status_code == 502
+
+
+def test_get_build_status_server_error():
+    with respx.mock:
+        respx.get(f"{jenkins.JENKINS_URL}/{jenkins.JENKINS_JOB_PATH}/7/api/json").mock(
+            return_value=httpx.Response(500)
+        )
+
+        with pytest.raises(Exception) as exc_info:
+            asyncio.run(jenkins.get_build_status(7))
+
+    assert exc_info.value.status_code == 502
+
+
 def test_missing_credentials_raises(monkeypatch):
     monkeypatch.setattr(jenkins, "JENKINS_USER", None)
 

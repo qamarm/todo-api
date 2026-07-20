@@ -1,5 +1,7 @@
 # Todo API
 
+[![CI](https://github.com/qamarm/todo-api/actions/workflows/ci.yml/badge.svg)](https://github.com/qamarm/todo-api/actions/workflows/ci.yml)
+
 A basic FastAPI todo app with CRUD operations, backed by SQLite (via SQLModel).
 
 ## Requirements

@@ -50,6 +50,19 @@ make lint     # ruff check
 make format   # ruff format
 ```
 
+## CI
+
+- **GitHub Actions** (badge above): runs on every push to `main` and on pull
+  requests — `uv sync --locked`, `ruff check`, then `pytest` with coverage.
+  Workflow: `.github/workflows/ci.yml`.
+- **Jenkins**: a separate pipeline job, `todo-api-ci`, on the local Jenkins
+  instance (`http://localhost:8080/job/todo-api-ci/`) mirrors the same
+  checkout/lint/test steps. Its pipeline script is defined inline on the job
+  (not stored in this repo). It additionally publishes JUnit test results and
+  a Cobertura coverage report to the Jenkins UI (via the JUnit and Coverage
+  plugins), giving a browsable pass/fail and per-file coverage view that the
+  console-only GitHub Actions run doesn't have.
+
 ## API
 
 | Method | Path          | Description       |

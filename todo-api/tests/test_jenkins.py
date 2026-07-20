@@ -90,7 +90,9 @@ def test_poll_queue_item_raises_on_cancelled():
 
 def test_poll_queue_item_times_out():
     with respx.mock:
-        respx.get(f"{QUEUE_URL}api/json").mock(return_value=httpx.Response(200, json={"why": "still waiting"}))
+        respx.get(f"{QUEUE_URL}api/json").mock(
+            return_value=httpx.Response(200, json={"why": "still waiting"})
+        )
 
         async def run():
             async with httpx.AsyncClient() as client:
@@ -142,7 +144,9 @@ def test_trigger_build_connection_error():
 
 def test_trigger_build_non_201_status():
     with respx.mock:
-        respx.post(f"{jenkins.JENKINS_URL}/{jenkins.JENKINS_JOB_PATH}/build").mock(return_value=httpx.Response(403))
+        respx.post(f"{jenkins.JENKINS_URL}/{jenkins.JENKINS_JOB_PATH}/build").mock(
+            return_value=httpx.Response(403)
+        )
 
         async def run():
             async with httpx.AsyncClient() as client:
@@ -156,7 +160,9 @@ def test_trigger_build_non_201_status():
 
 def test_trigger_build_missing_location_header():
     with respx.mock:
-        respx.post(f"{jenkins.JENKINS_URL}/{jenkins.JENKINS_JOB_PATH}/build").mock(return_value=httpx.Response(201))
+        respx.post(f"{jenkins.JENKINS_URL}/{jenkins.JENKINS_JOB_PATH}/build").mock(
+            return_value=httpx.Response(201)
+        )
 
         async def run():
             async with httpx.AsyncClient() as client:
@@ -234,7 +240,9 @@ def test_get_build_status_returns_status():
 def test_get_build_status_while_building():
     with respx.mock:
         respx.get(f"{jenkins.JENKINS_URL}/{jenkins.JENKINS_JOB_PATH}/7/api/json").mock(
-            return_value=httpx.Response(200, json={"number": 7, "url": BUILD_URL, "building": True, "result": None})
+            return_value=httpx.Response(
+                200, json={"number": 7, "url": BUILD_URL, "building": True, "result": None}
+            )
         )
 
         result = asyncio.run(jenkins.get_build_status(7))

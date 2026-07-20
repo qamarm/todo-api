@@ -41,6 +41,13 @@ uv run alembic revision --autogenerate -m "message"   # create a new migration a
 make test   # runs pytest with a coverage report (term-missing)
 ```
 
+## Lint & format
+
+```bash
+make lint     # ruff check
+make format   # ruff format
+```
+
 ## API
 
 | Method | Path          | Description       |

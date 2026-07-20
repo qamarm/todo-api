@@ -1,4 +1,5 @@
-from typing import Annotated, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from sqlmodel import Session, func, select

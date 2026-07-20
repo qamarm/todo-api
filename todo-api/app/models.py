@@ -1,21 +1,20 @@
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from sqlmodel import Field, SQLModel
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 class TodoBase(SQLModel):
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     completed: bool = False
 
 
 class Todo(TodoBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
 
@@ -25,9 +24,9 @@ class TodoCreate(TodoBase):
 
 
 class TodoUpdate(SQLModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    completed: Optional[bool] = None
+    title: str | None = None
+    description: str | None = None
+    completed: bool | None = None
 
 
 class TodoList(SQLModel):
@@ -45,4 +44,4 @@ class JenkinsBuildStatus(SQLModel):
     number: int
     url: str
     building: bool
-    result: Optional[str] = None
+    result: str | None = None

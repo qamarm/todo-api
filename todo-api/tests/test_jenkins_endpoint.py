@@ -38,7 +38,9 @@ def test_trigger_jenkins_build_propagates_errors():
 def test_get_jenkins_build_returns_status():
     async def fake_fetch_status(number: int) -> JenkinsBuildStatus:
         assert number == 7
-        return JenkinsBuildStatus(number=7, url="http://localhost:8080/job/my-cli/7/", building=False, result="SUCCESS")
+        return JenkinsBuildStatus(
+            number=7, url="http://localhost:8080/job/my-cli/7/", building=False, result="SUCCESS"
+        )
 
     app.dependency_overrides[get_jenkins_status_fetcher] = lambda: fake_fetch_status
     try:

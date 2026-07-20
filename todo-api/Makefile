@@ -1,4 +1,4 @@
-.PHONY: help install migrate migration run test build up up-d down logs clean
+.PHONY: help install migrate migration run test lint format build up up-d down logs clean
 
 .DEFAULT_GOAL := help
 
@@ -19,6 +19,12 @@ run: ## Run the dev server locally
 
 test: ## Run the test suite with coverage
 	uv run pytest -v --cov=app --cov-report=term-missing
+
+lint: ## Check code with ruff
+	uv run ruff check .
+
+format: ## Format code with ruff
+	uv run ruff format .
 
 build: ## Build the Docker image
 	docker compose build

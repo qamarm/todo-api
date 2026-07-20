@@ -45,18 +45,23 @@ uv run pytest
 |--------|---------------|--------------------|
 | GET    | `/health`     | Health check       |
 | POST   | `/todos`      | Create a todo      |
-| GET    | `/todos`      | List all todos     |
+| GET    | `/todos`      | List todos (paginated) |
 | GET    | `/todos/{id}` | Get a todo         |
 | PATCH  | `/todos/{id}` | Update a todo      |
 | DELETE | `/todos/{id}` | Delete a todo      |
 
-### Example
+### Examples
 
 ```bash
 curl -X POST http://localhost:8000/todos \
   -H "Content-Type: application/json" \
   -d '{"title": "Buy milk", "description": "2%"}'
+
+curl "http://localhost:8000/todos?limit=10&offset=0"
 ```
+
+`GET /todos` accepts `limit` (1-100, default 20) and `offset` (default 0), and
+returns `{"items": [...], "total": <int>, "limit": <int>, "offset": <int>}`.
 
 ## Notes
 

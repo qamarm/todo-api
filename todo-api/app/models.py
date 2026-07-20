@@ -28,3 +28,10 @@ class TodoUpdate(SQLModel):
     title: Optional[str] = None
     description: Optional[str] = None
     completed: Optional[bool] = None
+
+
+class TodoList(SQLModel):
+    items: list[Todo]
+    total: int
+    limit: int
+    offset: int

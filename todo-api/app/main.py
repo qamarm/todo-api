@@ -1,10 +1,10 @@
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, status
-from sqlmodel import Session, select
+from fastapi import Depends, FastAPI, HTTPException, Query, status
+from sqlmodel import Session, func, select
 
 from app.db import get_session
-from app.models import Todo, TodoCreate, TodoUpdate, utcnow
+from app.models import Todo, TodoCreate, TodoList, TodoUpdate, utcnow
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
@@ -25,9 +25,15 @@ def create_todo(todo: TodoCreate, session: SessionDep) -> Todo:
     return db_todo
 
 
-@app.get("/todos", response_model=list[Todo])
-def list_todos(session: SessionDep) -> list[Todo]:
-    return list(session.exec(select(Todo)).all())
+@app.get("/todos", response_model=TodoList)
+def list_todos(
+    session: SessionDep,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> TodoList:
+    total = session.exec(select(func.count()).select_from(Todo)).one()
+    items = session.exec(select(Todo).order_by(Todo.id).offset(offset).limit(limit)).all()
+    return TodoList(items=list(items), total=total, limit=limit, offset=offset)
 
 
 @app.get("/todos/{todo_id}", response_model=Todo)

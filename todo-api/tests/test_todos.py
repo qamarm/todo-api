@@ -40,7 +40,11 @@ def test_create_todo(client: TestClient):
 def test_list_todos_empty(client: TestClient):
     resp = client.get("/todos")
     assert resp.status_code == 200
-    assert resp.json() == []
+    data = resp.json()
+    assert data["items"] == []
+    assert data["total"] == 0
+    assert data["limit"] == 20
+    assert data["offset"] == 0
 
 
 def test_list_todos_returns_created(client: TestClient):
@@ -48,7 +52,35 @@ def test_list_todos_returns_created(client: TestClient):
     client.post("/todos", json={"title": "B"})
     resp = client.get("/todos")
     assert resp.status_code == 200
-    assert len(resp.json()) == 2
+    data = resp.json()
+    assert len(data["items"]) == 2
+    assert data["total"] == 2
+
+
+def test_list_todos_pagination(client: TestClient):
+    for i in range(5):
+        client.post("/todos", json={"title": f"Todo {i}"})
+
+    resp = client.get("/todos", params={"limit": 2, "offset": 0})
+    data = resp.json()
+    assert [item["title"] for item in data["items"]] == ["Todo 0", "Todo 1"]
+    assert data["total"] == 5
+    assert data["limit"] == 2
+    assert data["offset"] == 0
+
+    resp = client.get("/todos", params={"limit": 2, "offset": 2})
+    data = resp.json()
+    assert [item["title"] for item in data["items"]] == ["Todo 2", "Todo 3"]
+
+    resp = client.get("/todos", params={"limit": 2, "offset": 4})
+    data = resp.json()
+    assert [item["title"] for item in data["items"]] == ["Todo 4"]
+
+
+def test_list_todos_invalid_pagination_params(client: TestClient):
+    assert client.get("/todos", params={"limit": 0}).status_code == 422
+    assert client.get("/todos", params={"limit": 101}).status_code == 422
+    assert client.get("/todos", params={"offset": -1}).status_code == 422
 
 
 def test_get_todo(client: TestClient):

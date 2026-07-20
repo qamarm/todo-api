@@ -1,11 +1,12 @@
 [project]
 name = "todo-api"
 version = "0.1.0"
-description = "Basic FastAPI todo app with in-memory CRUD"
+description = "Basic FastAPI todo app with SQLite-backed CRUD"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
+    "sqlmodel>=0.0.22",
 ]
 
 [dependency-groups]

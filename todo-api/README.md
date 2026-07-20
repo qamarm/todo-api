@@ -1,6 +1,6 @@
 # Todo API
 
-A basic FastAPI todo app with CRUD operations, backed by in-memory storage.
+A basic FastAPI todo app with CRUD operations, backed by SQLite (via SQLModel).
 
 ## Requirements
 
@@ -50,4 +50,7 @@ curl -X POST http://localhost:8000/todos \
 
 ## Notes
 
-Data is stored in memory and resets whenever the app restarts.
+Data is stored in a SQLite database file at `data/todos.db` (created automatically
+on first run). When running with `docker compose`, this directory is mounted as a
+volume so data persists across container restarts. When running locally, it's
+created relative to the project root and is git-ignored.

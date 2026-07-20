@@ -1,9 +1,22 @@
-from fastapi import FastAPI, HTTPException, status
+from contextlib import asynccontextmanager
+from typing import Annotated, AsyncIterator
 
-from app.models import Todo, TodoCreate, TodoUpdate
-from app.storage import store
+from fastapi import Depends, FastAPI, HTTPException, status
+from sqlmodel import Session, select
 
-app = FastAPI(title="Todo API")
+from app.db import create_db_and_tables, get_session
+from app.models import Todo, TodoCreate, TodoUpdate, utcnow
+
+SessionDep = Annotated[Session, Depends(get_session)]
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    create_db_and_tables()
+    yield
+
+
+app = FastAPI(title="Todo API", lifespan=lifespan)
 
 
 @app.get("/health")
@@ -12,32 +25,45 @@ def health() -> dict[str, str]:
 
 
 @app.post("/todos", response_model=Todo, status_code=status.HTTP_201_CREATED)
-def create_todo(todo: TodoCreate) -> Todo:
-    return store.create(todo)
+def create_todo(todo: TodoCreate, session: SessionDep) -> Todo:
+    db_todo = Todo.model_validate(todo)
+    session.add(db_todo)
+    session.commit()
+    session.refresh(db_todo)
+    return db_todo
 
 
 @app.get("/todos", response_model=list[Todo])
-def list_todos() -> list[Todo]:
-    return store.list()
+def list_todos(session: SessionDep) -> list[Todo]:
+    return list(session.exec(select(Todo)).all())
 
 
 @app.get("/todos/{todo_id}", response_model=Todo)
-def get_todo(todo_id: int) -> Todo:
-    todo = store.get(todo_id)
+def get_todo(todo_id: int, session: SessionDep) -> Todo:
+    todo = session.get(Todo, todo_id)
     if todo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
     return todo
 
 
 @app.patch("/todos/{todo_id}", response_model=Todo)
-def update_todo(todo_id: int, todo: TodoUpdate) -> Todo:
-    updated = store.update(todo_id, todo)
-    if updated is None:
+def update_todo(todo_id: int, todo: TodoUpdate, session: SessionDep) -> Todo:
+    db_todo = session.get(Todo, todo_id)
+    if db_todo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
-    return updated
+    for key, value in todo.model_dump(exclude_unset=True).items():
+        setattr(db_todo, key, value)
+    db_todo.updated_at = utcnow()
+    session.add(db_todo)
+    session.commit()
+    session.refresh(db_todo)
+    return db_todo
 
 
 @app.delete("/todos/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_todo(todo_id: int) -> None:
-    if not store.delete(todo_id):
+def delete_todo(todo_id: int, session: SessionDep) -> None:
+    todo = session.get(Todo, todo_id)
+    if todo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
+    session.delete(todo)
+    session.commit()

@@ -1,4 +1,4 @@
-.PHONY: help install migrate migration run test build up down logs clean
+.PHONY: help install migrate migration run test build up up-d down logs clean
 
 .DEFAULT_GOAL := help
 
@@ -23,8 +23,11 @@ test: ## Run the test suite
 build: ## Build the Docker image
 	docker compose build
 
-up: ## Start the app with Docker Compose
+up: ## Start the app with Docker Compose (foreground)
 	docker compose up --build
+
+up-d: ## Start the app with Docker Compose (detached)
+	docker compose up --build -d
 
 down: ## Stop the Docker Compose services
 	docker compose down

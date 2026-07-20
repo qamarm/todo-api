@@ -1,12 +1,20 @@
-from typing import Annotated
+from typing import Annotated, Awaitable, Callable
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from sqlmodel import Session, func, select
 
 from app.db import get_session
-from app.models import Todo, TodoCreate, TodoList, TodoUpdate, utcnow
+from app.jenkins import trigger_build_and_wait
+from app.models import JenkinsBuildResponse, Todo, TodoCreate, TodoList, TodoUpdate, utcnow
 
 SessionDep = Annotated[Session, Depends(get_session)]
+
+
+def get_jenkins_trigger() -> Callable[[], Awaitable[str]]:
+    return trigger_build_and_wait
+
+
+JenkinsTriggerDep = Annotated[Callable[[], Awaitable[str]], Depends(get_jenkins_trigger)]
 
 app = FastAPI(title="Todo API")
 
@@ -65,3 +73,9 @@ def delete_todo(todo_id: int, session: SessionDep) -> None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
     session.delete(todo)
     session.commit()
+
+
+@app.post("/jenkins/builds", response_model=JenkinsBuildResponse, status_code=status.HTTP_201_CREATED)
+async def trigger_jenkins_build(trigger: JenkinsTriggerDep) -> JenkinsBuildResponse:
+    build_url = await trigger()
+    return JenkinsBuildResponse(build_url=build_url)

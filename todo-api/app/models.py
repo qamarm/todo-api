@@ -35,3 +35,7 @@ class TodoList(SQLModel):
     total: int
     limit: int
     offset: int
+
+
+class JenkinsBuildResponse(SQLModel):
+    build_url: str

@@ -10,6 +10,7 @@ A basic FastAPI todo app with CRUD operations, backed by SQLite (via SQLModel).
 ## Run with Docker
 
 ```bash
+cp .env.example .env   # fill in JENKINS_USER / JENKINS_API_TOKEN if you need the Jenkins endpoint
 docker compose up --build
 ```
 
@@ -21,6 +22,7 @@ at `http://localhost:8000`, with interactive docs at `http://localhost:8000/docs
 ```bash
 uv sync
 uv run alembic upgrade head
+set -a && source .env && set +a   # if you need the Jenkins endpoint
 uv run uvicorn app.main:app --reload
 ```
 
@@ -43,12 +45,13 @@ uv run pytest
 
 | Method | Path          | Description       |
 |--------|---------------|--------------------|
-| GET    | `/health`     | Health check       |
-| POST   | `/todos`      | Create a todo      |
-| GET    | `/todos`      | List todos (paginated) |
-| GET    | `/todos/{id}` | Get a todo         |
-| PATCH  | `/todos/{id}` | Update a todo      |
-| DELETE | `/todos/{id}` | Delete a todo      |
+| GET    | `/health`        | Health check       |
+| POST   | `/todos`         | Create a todo      |
+| GET    | `/todos`         | List todos (paginated) |
+| GET    | `/todos/{id}`    | Get a todo         |
+| PATCH  | `/todos/{id}`    | Update a todo      |
+| DELETE | `/todos/{id}`    | Delete a todo      |
+| POST   | `/jenkins/builds` | Trigger the `my-cli` Jenkins job |
 
 ### Examples
 
@@ -62,6 +65,18 @@ curl "http://localhost:8000/todos?limit=10&offset=0"
 
 `GET /todos` accepts `limit` (1-100, default 20) and `offset` (default 0), and
 returns `{"items": [...], "total": <int>, "limit": <int>, "offset": <int>}`.
+
+```bash
+curl -X POST http://localhost:8000/jenkins/builds
+```
+
+`POST /jenkins/builds` triggers the `my-cli` Jenkins job (job name is fixed for
+now), waits (up to 30s) for Jenkins to assign a build number, and returns
+`{"build_url": "http://localhost:8080/job/my-cli/<n>/"}`. Requires
+`JENKINS_URL`, `JENKINS_USER`, and `JENKINS_API_TOKEN` to be set (see
+`.env.example`). Returns `502` if Jenkins can't be reached or rejects the
+request, `504` (with the queue item URL in the error) if Jenkins doesn't
+assign a build number within the timeout.
 
 ## Notes
 
